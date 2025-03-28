@@ -1,4 +1,4 @@
-    pipeline {
+pipeline {
     agent any
 
     environment {
@@ -50,6 +50,4 @@
             echo 'Build or Deployment Failed!'
         }
     }
-}
-
 }
