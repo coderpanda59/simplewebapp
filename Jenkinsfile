@@ -4,7 +4,7 @@ pipeline {
     environment {
         JAVA_HOME = 'C:\\Program Files\\Java\\jdk-17.0.12' // Ensure it's correct
         MAVEN_HOME = 'C:\\apache-maven-3.9.9' // Ensure it's correct
-        CATALINA_HOME = 'C:\\Users\\pmasu\Downloads\\apache-tomcat-9.0.102-windows-x64\\apache-tomcat-9.0.102' // Path to Tomcat
+        CATALINA_HOME = 'C:\\Users\\pmasu\\Downloads\\apache-tomcat-9.0.102-windows-x64\\apache-tomcat-9.0.102' // Path to Tomcat
         PATH = "${JAVA_HOME}\\bin;${MAVEN_HOME}\\bin;${CATALINA_HOME}\\bin;${env.PATH}"
     }
 
