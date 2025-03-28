@@ -1,53 +1,46 @@
 pipeline {
     agent any
-
     environment {
-        JAVA_HOME = '/usr/lib/jvm/java-17-openjdk-amd64' // Ensure it's correct
-        MAVEN_HOME = 'C:\\apache-maven-3.9.9' // Ensure it's correct
-        PATH = "${JAVA_HOME}\\bin;${MAVEN_HOME}\\bin;${env.PATH}"
-        
-        // AWS EC2 Details
-        EC2_USER = 'ubuntu'  // Change to 'ec2-user' if using Amazon Linux
-        EC2_IP = '3.25.50.162'  // Replace with your EC2 Public IP
-        SSH_KEY = 'C:\\Users\\pmasu\\Downloads\\jenkins.pem' // Full path to your SSH private key
-        REMOTE_TOMCAT_PATH = 'var/lib/tomcat10/webapps/' // Update based on your Tomcat setup
+        SSH_KEY = "/var/lib/jenkins/.ssh/jenkins.pem"
+        SSH_USER = "ubuntu"
+        SSH_HOST = "ec2-3-24-135-39.ap-southeast-2.compute.amazonaws.com"
+        APP_DIR = "/home/ubuntu/app"
+        DOCKER_IMAGE = "pandurang70/springboot-app:latest"
+        CONTAINER_NAME = "springboot-app"
     }
-
     stages {
-        stage('Checkout Code') {
+        stage('Clone Repository') {
             steps {
-                git branch: 'main', 
-                    credentialsId: 'github-pat', 
-                    url: 'https://github.com/coderpanda59/simplewebapp.git'
+                git 'https://github.com/coderpanda59/simplewebapp.git'
             }
         }
-
-        stage('Build & Test') {
+        stage('Build Project') {
             steps {
-                bat 'mvn clean package'
-                bat 'mvn test'
+                sh "mvn clean package -DskipTests"
             }
         }
-
+        stage('Build Docker Image') {
+            steps {
+                sh """
+                docker build -t \$DOCKER_IMAGE .
+                docker tag \$DOCKER_IMAGE pandurang70/springboot-app:latest
+                docker push pandurang70/springboot-app:latest
+                """
+            }
+        }
         stage('Deploy to AWS EC2') {
             steps {
-                echo 'Transferring WAR file to AWS EC2...'
-
-                // Securely copy WAR file to EC2 using SCP
-                bat "scp -i \"${SSH_KEY}\" target\\simplewebapp.war ${EC2_USER}@${EC2_IP}:${REMOTE_TOMCAT_PATH}"
-
-                // Restart Tomcat on EC2
-                bat "ssh -i \"${SSH_KEY}\" ${EC2_USER}@${EC2_IP} 'sudo systemctl restart tomcat'"
+                script {
+                    sh """
+                    ssh -i \$SSH_KEY \$SSH_USER@\$SSH_HOST "
+                    sudo docker pull pandurang70/springboot-app:latest;
+                    sudo docker stop \$CONTAINER_NAME || true;
+                    sudo docker rm \$CONTAINER_NAME || true;
+                    sudo docker run -d --name \$CONTAINER_NAME -p 8081:8081 \$DOCKER_IMAGE;
+                    "
+                    """
+                }
             }
-        }
-    }
-
-    post {
-        success {
-            echo 'Deployment to AWS EC2 Successful!'
-        }
-        failure {
-            echo 'Build or Deployment Failed!'
         }
     }
 }
