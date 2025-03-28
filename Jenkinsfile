@@ -2,7 +2,9 @@ pipeline {
     agent any
 
     environment {
-        JAVA_HOME = '/usr/lib/jvm/java-17-openjdk-amd64'  // Adjust path if needed
+        JAVA_HOME = 'C:\\Program Files\\Java\\jdk-17' // Update path as per your setup
+        MAVEN_HOME = 'C:\\Program Files\\Apache\\Maven' // Update path
+        PATH = "${JAVA_HOME}\\bin;${MAVEN_HOME}\\bin;${env.PATH}"
     }
 
     stages {
@@ -16,40 +18,36 @@ pipeline {
 
         stage('Build') {
             steps {
-                script {
-                    def mvnHome = tool name: 'maven', type: 'maven'
-                    sh "${mvnHome}/bin/mvn clean package"
-                }
+                bat 'mvn clean package'
             }
         }
 
         stage('Test') {
             steps {
-                sh 'mvn test'
+                bat 'mvn test'
             }
         }
 
         stage('Package') {
             steps {
-                sh 'mvn package -DskipTests'
+                bat 'mvn package'
             }
         }
 
         stage('Deploy') {
             steps {
-                echo "Deploying application..."
-                // Add deployment steps (e.g., copying JAR/WAR file to the server)
-                // sh 'scp target/*.jar user@server:/deploy/path'
+                echo 'Deploying application...'
+                bat 'java -jar target/*.jar' // Update with actual JAR name
             }
         }
     }
 
     post {
         success {
-            echo "Build & Deployment Successful!"
+            echo 'Build and Deployment Successful!'
         }
         failure {
-            echo "Build Failed!"
+            echo 'Build Failed!'
         }
     }
 }
