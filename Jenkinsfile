@@ -8,9 +8,9 @@
         
         // AWS EC2 Details
         EC2_USER = 'ubuntu'  // Change to 'ec2-user' if using Amazon Linux
-        EC2_IP = '16.176.12.174'  // Replace with your EC2 Public IP
+        EC2_IP = '3.25.50.162'  // Replace with your EC2 Public IP
         SSH_KEY = 'C:\\Users\\pmasu\\Downloads\\jenkins.pem' // Full path to your SSH private key
-        REMOTE_TOMCAT_PATH = '/opt/tomcat/webapps/' // Update based on your Tomcat setup
+        REMOTE_TOMCAT_PATH = 'var/lib/tomcat10/webapps/' // Update based on your Tomcat setup
     }
 
     stages {
