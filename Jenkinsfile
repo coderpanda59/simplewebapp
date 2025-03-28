@@ -1,11 +1,16 @@
-pipeline {
+    pipeline {
     agent any
 
     environment {
-        JAVA_HOME = 'C:\\Program Files\\Java\\jdk-17.0.12' // Ensure it's correct
+        JAVA_HOME = '/usr/lib/jvm/java-17-openjdk-amd64' // Ensure it's correct
         MAVEN_HOME = 'C:\\apache-maven-3.9.9' // Ensure it's correct
-        CATALINA_HOME = 'C:\\Users\\pmasu\\Downloads\\apache-tomcat-9.0.102-windows-x64\\apache-tomcat-9.0.102' // Path to Tomcat
-        PATH = "${JAVA_HOME}\\bin;${MAVEN_HOME}\\bin;${CATALINA_HOME}\\bin;${env.PATH}"
+        PATH = "${JAVA_HOME}\\bin;${MAVEN_HOME}\\bin;${env.PATH}"
+        
+        // AWS EC2 Details
+        EC2_USER = 'ubuntu'  // Change to 'ec2-user' if using Amazon Linux
+        EC2_IP = '16.176.12.174'  // Replace with your EC2 Public IP
+        SSH_KEY = 'C:\\Users\\pmasu\\Downloads\\jenkins.pem' // Full path to your SSH private key
+        REMOTE_TOMCAT_PATH = '/opt/tomcat/webapps/' // Update based on your Tomcat setup
     }
 
     stages {
@@ -24,22 +29,27 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
+        stage('Deploy to AWS EC2') {
             steps {
-                echo 'Deploying WAR file to Tomcat...'
-                bat 'copy target\\simplewebapp.war %CATALINA_HOME%\\webapps\\'
-                bat '%CATALINA_HOME%\\bin\\shutdown.bat' // Stop Tomcat
-                bat '%CATALINA_HOME%\\bin\\startup.bat'  // Start Tomcat
+                echo 'Transferring WAR file to AWS EC2...'
+
+                // Securely copy WAR file to EC2 using SCP
+                bat "scp -i \"${SSH_KEY}\" target\\simplewebapp.war ${EC2_USER}@${EC2_IP}:${REMOTE_TOMCAT_PATH}"
+
+                // Restart Tomcat on EC2
+                bat "ssh -i \"${SSH_KEY}\" ${EC2_USER}@${EC2_IP} 'sudo systemctl restart tomcat'"
             }
         }
     }
 
     post {
         success {
-            echo 'Build and Deployment Successful!'
+            echo 'Deployment to AWS EC2 Successful!'
         }
         failure {
-            echo 'Build Failed!'
+            echo 'Build or Deployment Failed!'
         }
     }
+}
+
 }
