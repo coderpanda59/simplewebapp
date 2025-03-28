@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        JAVA_HOME = 'C:\\Program Files\\Java\\jdk-17' // Update path as per your setup
-        MAVEN_HOME = 'C:\\Program Files\\Apache\\Maven' // Update path
+        JAVA_HOME = 'C:\\Program Files\\Java\\jdk-17' // Ensure it's correct
+        MAVEN_HOME = 'C:\\Program Files\\Apache\\Maven' // Ensure it's correct
         PATH = "${JAVA_HOME}\\bin;${MAVEN_HOME}\\bin;${env.PATH}"
     }
 
@@ -16,28 +16,17 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Build & Test') {
             steps {
                 bat 'mvn clean package'
-            }
-        }
-
-        stage('Test') {
-            steps {
                 bat 'mvn test'
-            }
-        }
-
-        stage('Package') {
-            steps {
-                bat 'mvn package'
             }
         }
 
         stage('Deploy') {
             steps {
                 echo 'Deploying application...'
-                bat 'java -jar target/*.jar' // Update with actual JAR name
+                bat 'java -jar target/simplewebapp-1.0-SNAPSHOT.jar' // Replace with actual JAR name
             }
         }
     }
