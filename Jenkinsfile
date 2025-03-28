@@ -4,7 +4,8 @@ pipeline {
     environment {
         JAVA_HOME = 'C:\\Program Files\\Java\\jdk-17' // Ensure it's correct
         MAVEN_HOME = 'C:\\Program Files\\Apache\\Maven' // Ensure it's correct
-        PATH = "${JAVA_HOME}\\bin;${MAVEN_HOME}\\bin;${env.PATH}"
+        CATALINA_HOME = 'C:\\apache-tomcat-9.0.XX' // Path to Tomcat
+        PATH = "${JAVA_HOME}\\bin;${MAVEN_HOME}\\bin;${CATALINA_HOME}\\bin;${env.PATH}"
     }
 
     stages {
@@ -25,8 +26,10 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                echo 'Deploying application...'
-                bat 'java -jar target/simplewebapp-1.0-SNAPSHOT.jar' // Replace with actual JAR name
+                echo 'Deploying WAR file to Tomcat...'
+                bat 'copy target\\simplewebapp.war %CATALINA_HOME%\\webapps\\'
+                bat '%CATALINA_HOME%\\bin\\shutdown.bat' // Stop Tomcat
+                bat '%CATALINA_HOME%\\bin\\startup.bat'  // Start Tomcat
             }
         }
     }
