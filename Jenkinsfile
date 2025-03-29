@@ -10,7 +10,8 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/coderpanda59/simplewebapp.git'
+                git url: 'https://github.com/coderpanda59/simplewebapp.git', credentialsId: '020d4854-fb5a-4cae-b6be-3876a63dab70'
+
             }
         }
         stage('Build Project') {
