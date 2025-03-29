@@ -1,14 +1,11 @@
 pipeline {
     agent any
     environment {
-        SSH_KEY = credentials('jenkins-ssh-key')  // Use Jenkins credentials for security
         SSH_USER = "ubuntu"
         SSH_HOST = "ec2-3-24-135-39.ap-southeast-2.compute.amazonaws.com"
         APP_DIR = "/home/ubuntu/app"
         DOCKER_IMAGE = "pandurang70/springboot-app:latest"
         CONTAINER_NAME = "springboot-app"
-        DOCKER_HUB_USERNAME = credentials('pandurang70')
-        DOCKER_HUB_PASSWORD = credentials('dckr_pat_qbiab33G-2ncPkvgb1rWPD2Cu3s')
     }
     stages {
         stage('Clone Repository') {
@@ -23,7 +20,9 @@ pipeline {
         }
         stage('Docker Login') {
             steps {
-                sh "echo \"$DOCKER_HUB_PASSWORD\" | docker login -u \"$DOCKER_HUB_USERNAME\" --password-stdin"
+                withCredentials([usernamePassword(credentialsId: 'docker-hub', usernameVariable: 'DOCKER_HUB_USERNAME', passwordVariable: 'DOCKER_HUB_PASSWORD')]) {
+                    sh "echo \"$DOCKER_HUB_PASSWORD\" | docker login -u \"$DOCKER_HUB_USERNAME\" --password-stdin"
+                }
             }
         }
         stage('Build & Push Docker Image') {
@@ -36,14 +35,14 @@ pipeline {
         }
         stage('Deploy to AWS EC2') {
             steps {
-                script {
+                withCredentials([sshUserPrivateKey(credentialsId: 'jenkins-ssh-key', keyFileVariable: 'SSH_KEY_PATH')]) {
                     sh """
-                    ssh -i $SSH_KEY $SSH_USER@$SSH_HOST <<EOF
-                    sudo docker login -u \"$DOCKER_HUB_USERNAME\" -p \"$DOCKER_HUB_PASSWORD\"
-                    sudo docker pull $DOCKER_IMAGE
-                    sudo docker stop $CONTAINER_NAME || true
-                    sudo docker rm $CONTAINER_NAME || true
-                    sudo docker run -d --name $CONTAINER_NAME -p 8081:8081 $DOCKER_IMAGE
+                    ssh -o StrictHostKeyChecking=no -i $SSH_KEY_PATH $SSH_USER@$SSH_HOST <<EOF
+                    docker login -u "$DOCKER_HUB_USERNAME" -p "$DOCKER_HUB_PASSWORD"
+                    docker pull $DOCKER_IMAGE
+                    docker stop $CONTAINER_NAME || true
+                    docker rm $CONTAINER_NAME || true
+                    docker run -d --name $CONTAINER_NAME -p 8081:8081 $DOCKER_IMAGE
                     EOF
                     """
                 }
