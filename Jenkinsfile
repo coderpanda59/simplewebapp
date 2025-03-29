@@ -44,45 +44,32 @@ pipeline {
             }
         }
         
-//        stage('Deploy to AWS EC2') {
-//            steps {
-//                withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', 
-//                        keyFileVariable: 'SSH_KEY_PATH')]) {
-//                    bat """
-//                    powershell -Command "& {
-//                        ssh -o StrictHostKeyChecking=no -i %SSH_KEY_PATH% %SSH_USER%@%SSH_HOST% \"
-//                        docker stop ${CONTAINER_NAME} || true;
-//                        docker rm ${CONTAINER_NAME} || true;
-//                        docker pull ${DOCKER_IMAGE};
-//                        docker run -d --name ${CONTAINER_NAME} -p 8081:8081 ${DOCKER_IMAGE};
-//                        \"""
-//                    }"
-//                    """
-//                }
-//            }
-//        }
-
- 		stage('Deploy to AWS EC2') {
+        stage('Deploy to AWS EC2') {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
                     bat """
-                    powershell -Command "& {
-                        ssh -o StrictHostKeyChecking=no -i %SSH_KEY_PATH% %SSH_USER%@%SSH_HOST% \"
-                        'docker stop ${CONTAINER_NAME} || exit 0; docker rm ${CONTAINER_NAME} || exit 0; docker pull ${DOCKER_IMAGE}; docker run -d --name ${CONTAINER_NAME} -p 8081:8081 ${DOCKER_IMAGE};'
-                    }"
+                    cmd /c ssh -o StrictHostKeyChecking=no -i %SSH_KEY_PATH% %SSH_USER%@%SSH_HOST% "
+                    docker stop ${CONTAINER_NAME} || true; 
+                    docker rm ${CONTAINER_NAME} || true; 
+                    docker system prune -f; 
+                    docker pull ${DOCKER_IMAGE} || exit 1; 
+                    docker run -d --name ${CONTAINER_NAME} -p 8081:8081 ${DOCKER_IMAGE} || exit 1
+                    "
                     """
                 }
             }
         }
-        
+
         stage('Health Check') {
             steps {
                 bat """
                 powershell -Command "& {
                     try {
-                        Invoke-WebRequest -Uri http://%SSH_HOST%:8081 -UseBasicParsing
+                        $response = Invoke-WebRequest -Uri http://%SSH_HOST%:8081 -UseBasicParsing
+                        if ($response.StatusCode -ne 200) { exit 1 }
                     } catch {
                         Write-Output 'Application failed to start'
+                        exit 1
                     }
                 }"
                 """
