@@ -47,14 +47,14 @@ pipeline {
         stage('Deploy to AWS EC2') {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
-                    bat """
-                    cmd /c ssh -o StrictHostKeyChecking=no -i %SSH_KEY_PATH% %SSH_USER%@%SSH_HOST% "
-                    docker stop ${CONTAINER_NAME} || true; 
-                    docker rm ${CONTAINER_NAME} || true; 
-                    docker system prune -f; 
-                    docker pull ${DOCKER_IMAGE} || exit 1; 
-                    docker run -d --name ${CONTAINER_NAME} -p 8081:8081 ${DOCKER_IMAGE} || exit 1
-                    "
+                    powershell """
+                    ssh -o StrictHostKeyChecking=no -i $env:SSH_KEY_PATH $env:SSH_USER@$env:SSH_HOST << 'EOF'
+                        docker stop $env:CONTAINER_NAME || true
+                        docker rm $env:CONTAINER_NAME || true
+                        docker system prune -f
+                        docker pull $env:DOCKER_IMAGE || exit 1
+                        docker run -d --name $env:CONTAINER_NAME -p 8081:8081 $env:DOCKER_IMAGE || exit 1
+                    EOF
                     """
                 }
             }
@@ -62,16 +62,14 @@ pipeline {
 
         stage('Health Check') {
             steps {
-                bat """
-                powershell -Command "& {
-                    try {
-                        $response = Invoke-WebRequest -Uri http://%SSH_HOST%:8081 -UseBasicParsing
-                        if ($response.StatusCode -ne 200) { exit 1 }
-                    } catch {
-                        Write-Output 'Application failed to start'
-                        exit 1
-                    }
-                }"
+                powershell """
+                try {
+                    $response = Invoke-WebRequest -Uri http://$env:SSH_HOST:8081 -UseBasicParsing
+                    if ($response.StatusCode -ne 200) { exit 1 }
+                } catch {
+                    Write-Output 'Application failed to start'
+                    exit 1
+                }
                 """
             }
         }
