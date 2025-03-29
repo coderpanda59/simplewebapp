@@ -55,7 +55,7 @@ pipeline {
 	    steps {
 	        withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
 	            powershell '''
-	            	ssh -o StrictHostKeyChecking=no -i "C:/Users/pmasu/.ssh/jenkins.pem" ubuntu@ec2-3-27-170-22.ap-southeast-2.compute.amazonaws.com"'
+	            	ssh -o StrictHostKeyChecking=no -i "C:/Users/pmasu/.ssh/jenkins.pem" ubuntu@ec2-3-27-170-22.ap-southeast-2.compute.amazonaws.com
 	                echo 'SSH Connection Successful' && `
 	                docker stop $env:CONTAINER_NAME; `
 	                docker rm $env:CONTAINER_NAME; `
