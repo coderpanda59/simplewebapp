@@ -80,13 +80,13 @@ pipeline {
 		        withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
 		            bat """
 		            powershell -Command "& {
-		                ssh -o StrictHostKeyChecking=no -i %SSH_KEY_PATH% %SSH_USER%@%SSH_HOST% \"
+		                ssh -o StrictHostKeyChecking=no -i %SSH_KEY_PATH% %SSH_USER%@%SSH_HOST% '
 		                docker stop ${CONTAINER_NAME} || true;
 		                docker rm ${CONTAINER_NAME} || true;
 		                docker system prune -f;
 		                docker pull ${DOCKER_IMAGE};
 		                docker run -d --name ${CONTAINER_NAME} -p 8081:8081 ${DOCKER_IMAGE};
-		                
+		                '
 		            }"
 		            """
 		        }
