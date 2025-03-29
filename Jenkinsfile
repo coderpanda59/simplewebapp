@@ -2,7 +2,7 @@ pipeline {
     agent any
     environment {
         SSH_USER = "ubuntu"
-        SSH_HOST = "ubuntu@ec2-54-252-240-79.ap-southeast-2.compute.amazonaws.com"
+        SSH_HOST = "ec2-54-252-240-79.ap-southeast-2.compute.amazonaws.com"
         APP_DIR = "/home/ubuntu/app"
         DOCKER_IMAGE = "pandurang70/springboot-app:latest"
         CONTAINER_NAME = "springboot-app"
@@ -54,7 +54,7 @@ pipeline {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
                     powershell '''
-  					ssh -o StrictHostKeyChecking=no -i C:/Users/pmasu/.ssh/id_rsa ubuntu@ec2-54-252-240-79.ap-southeast-2.compute.amazonaws.com "echo 'SSH Connection Successful'"
+  					ssh -o StrictHostKeyChecking=no -i C:/Users/pmasu/downloads/jenkin.pem ubuntu@ec2-54-252-240-79.ap-southeast-2.compute.amazonaws.com "echo 'SSH Connection Successful'"
                     "docker stop $env:CONTAINER_NAME || true; `
                     docker rm $env:CONTAINER_NAME || true; `
                     docker system prune -f; `
