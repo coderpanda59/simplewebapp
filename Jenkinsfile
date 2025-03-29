@@ -15,44 +15,54 @@ pipeline {
         }
         stage('Build Project') {
             steps {
-                sh "mvn clean package"
+                bat "mvn clean package"
             }
         }
         stage('Docker Login') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_HUB_USERNAME', passwordVariable: 'DOCKER_HUB_PASSWORD')]) {
-                    sh "echo \"$DOCKER_HUB_PASSWORD\" | docker login -u \"$DOCKER_HUB_USERNAME\" --password-stdin"
+                    bat """
+                    echo %DOCKER_HUB_PASSWORD% | docker login -u %DOCKER_HUB_USERNAME% --password-stdin
+                    """
                 }
             }
         }
         stage('Build & Push Docker Image') {
             steps {
-                sh """
-                docker build -t $DOCKER_IMAGE .
-                docker push $DOCKER_IMAGE
+                bat """
+                docker build -t %DOCKER_IMAGE% .
+                docker push %DOCKER_IMAGE%
                 """
             }
         }
         stage('Deploy to AWS EC2') {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: '627a9a41-4dba-4bf0-a395-aaffa16f7533', keyFileVariable: 'SSH_KEY_PATH')]) {
-                    sh """
-                    ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_PATH" "$SSH_USER@$SSH_HOST" <<EOF
-                    docker login -u "$DOCKER_HUB_USERNAME" -p "$DOCKER_HUB_PASSWORD"
-                    docker pull $DOCKER_IMAGE
-                    docker stop $CONTAINER_NAME || true
-                    docker rm $CONTAINER_NAME || true
-                    docker run -d --name $CONTAINER_NAME -p 8081:8081 $DOCKER_IMAGE
-                    EOF
+                    bat """
+                    powershell -Command "& {
+                        ssh -o StrictHostKeyChecking=no -i %SSH_KEY_PATH% %SSH_USER%@%SSH_HOST% \"
+                        docker login -u %DOCKER_HUB_USERNAME% -p %DOCKER_HUB_PASSWORD%;
+                        docker pull %DOCKER_IMAGE%;
+                        docker stop %CONTAINER_NAME% || true;
+                        docker rm %CONTAINER_NAME% || true;
+                        docker run -d --name %CONTAINER_NAME% -p 8081:8081 %DOCKER_IMAGE%;
+                        \""
+                    }"
                     """
                 }
             }
         }
         stage('Health Check') {
             steps {
-                script {
-                    sh "curl -f http://$SSH_HOST:8081 || echo 'Application failed to start'"
-                }
+                bat """
+                powershell -Command "& {
+                    try {
+                        Invoke-WebRequest -Uri http://%SSH_HOST%:8081 -UseBasicParsing
+                    } catch {
+                        Write-Output 'Application failed to start'
+                    }
+                }"
+                """
             }
         }
     }
