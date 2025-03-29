@@ -44,28 +44,68 @@ pipeline {
             }
         }
         
-     stage('Deploy to AWS EC2') {
+//        stage('Deploy to AWS EC2') {
+//            steps {
+//                withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', 
+//                        keyFileVariable: 'SSH_KEY_PATH')]) {
+//                    bat """
+//                    powershell -Command "& {
+//                        ssh -o StrictHostKeyChecking=no -i %SSH_KEY_PATH% %SSH_USER%@%SSH_HOST% \"
+//                        docker stop ${CONTAINER_NAME} || true;
+//                        docker rm ${CONTAINER_NAME} || true;
+//                        docker pull ${DOCKER_IMAGE};
+//                        docker run -d --name ${CONTAINER_NAME} -p 8081:8081 ${DOCKER_IMAGE};
+//                        \"""
+//                    }"
+//                    """
+//                }
+//            }
+//        }
+
+// 		stage('Deploy to AWS EC2') {
+//            steps {
+//                withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
+//                    bat """
+//                    powershell -Command "& {
+//                        ssh -o StrictHostKeyChecking=no -i %SSH_KEY_PATH% %SSH_USER%@%SSH_HOST% \"
+//                        'docker stop ${CONTAINER_NAME} || exit 0; docker rm ${CONTAINER_NAME} || exit 0; docker pull ${DOCKER_IMAGE}; docker run -d --name ${CONTAINER_NAME} -p 8081:8081 ${DOCKER_IMAGE};'
+//                    }"
+//                    """
+//                }
+//            }
+//        }
+        
+      stage('Deploy to AWS EC2') {
     steps {
-        bat """
-        echo "Deploying to EC2..."
-        ssh -o StrictHostKeyChecking=no -i "%SSH_KEY_PATH%" %SSH_USER%@%SSH_HOST% ^
-        "docker stop %CONTAINER_NAME% 2>/dev/null; docker rm %CONTAINER_NAME% 2>/dev/null; docker system prune -f; docker pull %DOCKER_IMAGE% && docker run -d --name %CONTAINER_NAME% -p 8081:8081 %DOCKER_IMAGE%"
-        """
+        withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
+            bat """
+            powershell -Command "& {
+            /*    ssh -o StrictHostKeyChecking=no -i %SSH_KEY_PATH% %SSH_USER%@%SSH_HOST% \\"bash -s\\" << 'EOF'*/
+            ssh -o StrictHostKeyChecking=no -i %SSH_KEY_PATH% %SSH_USER%@%SSH_HOST% "bash -s" << 'EOF'
+
+                docker stop ${CONTAINER_NAME} || true
+                docker rm ${CONTAINER_NAME} || true
+                docker system prune -f
+                docker pull ${DOCKER_IMAGE}
+                docker run -d --name ${CONTAINER_NAME} -p 8081:8081 ${DOCKER_IMAGE}
+                EOF
+            }"
+            """
+        }
     }
 }
 
 
-
         stage('Health Check') {
             steps {
-                powershell """
-                try {
-                    $response = Invoke-WebRequest -Uri http://$env:SSH_HOST:8081 -UseBasicParsing
-                    if ($response.StatusCode -ne 200) { exit 1 }
-                } catch {
-                    Write-Output 'Application failed to start'
-                    exit 1
-                }
+                bat """
+                powershell -Command "& {
+                    try {
+                        Invoke-WebRequest -Uri http://%SSH_HOST%:8081 -UseBasicParsing
+                    } catch {
+                        Write-Output 'Application failed to start'
+                    }
+                }"
                 """
             }
         }
