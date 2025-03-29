@@ -1,4 +1,4 @@
-pipeline {
+pipeline { 
     agent any
     environment {
         SSH_USER = "ubuntu"
@@ -10,23 +10,30 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git url: 'https://github.com/coderpanda59/simplewebapp.git', branch: 'main', credentialsId: '020d4854-fb5a-4cae-b6be-3876a63dab70'
+                git url: 'https://github.com/coderpanda59/simplewebapp.git', 
+                    branch: 'main', 
+                    credentialsId: '020d4854-fb5a-4cae-b6be-3876a63dab70'
             }
         }
+        
         stage('Build Project') {
             steps {
                 bat "mvn clean package"
             }
         }
+        
         stage('Docker Login') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_HUB_USERNAME', passwordVariable: 'DOCKER_HUB_PASSWORD')]) {
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', 
+                        usernameVariable: 'DOCKER_HUB_USERNAME', 
+                        passwordVariable: 'DOCKER_HUB_PASSWORD')]) {
                     bat """
                     docker login -u %DOCKER_HUB_USERNAME% -p %DOCKER_HUB_PASSWORD%
                     """
                 }
             }
         }
+        
         stage('Build & Push Docker Image') {
             steps {
                 bat """
@@ -35,23 +42,25 @@ pipeline {
                 """
             }
         }
+        
         stage('Deploy to AWS EC2') {
             steps {
-                withCredentials([sshUserPrivateKey(credentialsId: '627a9a41-4dba-4bf0-a395-aaffa16f7533', keyFileVariable: 'SSH_KEY_PATH')]) {
+                withCredentials([sshUserPrivateKey(credentialsId: '627a9a41-4dba-4bf0-a395-aaffa16f7533', 
+                        keyFileVariable: 'SSH_KEY_PATH')]) {
                     bat """
                     powershell -Command "& {
                         ssh -o StrictHostKeyChecking=no -i %SSH_KEY_PATH% %SSH_USER%@%SSH_HOST% \"
-                        docker login -u %DOCKER_HUB_USERNAME% -p %DOCKER_HUB_PASSWORD%;
-                        docker pull %DOCKER_IMAGE%;
-                        docker stop %CONTAINER_NAME% || true;
-                        docker rm %CONTAINER_NAME% || true;
-                        docker run -d --name %CONTAINER_NAME% -p 8081:8081 %DOCKER_IMAGE%;
-                        \""
+                        docker stop ${CONTAINER_NAME} || true;
+                        docker rm ${CONTAINER_NAME} || true;
+                        docker pull ${DOCKER_IMAGE};
+                        docker run -d --name ${CONTAINER_NAME} -p 8081:8081 ${DOCKER_IMAGE};
+                        \"""
                     }"
                     """
                 }
             }
         }
+        
         stage('Health Check') {
             steps {
                 bat """
