@@ -46,7 +46,7 @@ pipeline {
         
         stage('Deploy to AWS EC2') {
             steps {
-                withCredentials([sshUserPrivateKey(credentialsId: '627a9a41-4dba-4bf0-a395-aaffa16f7533', 
+                withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', 
                         keyFileVariable: 'SSH_KEY_PATH')]) {
                     bat """
                     powershell -Command "& {
