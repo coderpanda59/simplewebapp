@@ -16,19 +16,19 @@ pipeline {
         }
         stage('Build Project') {
             steps {
-                sh "mvn clean package -DskipTests"
+                bat "mvn clean package"
             }
         }
         stage('Docker Login') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'pandurang70', passwordVariable: 'Ddckr_pat_qbiab33G-2ncPkvgb1rWPD2Cu3s')]) {
-                    sh "echo \"$DOCKER_HUB_PASSWORD\" | docker login -u \"$DOCKER_HUB_USERNAME\" --password-stdin"
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'pandurang70', passwordVariable: 'dckr_pat_qbiab33G-2ncPkvgb1rWPD2Cu3s')]) {
+                    bat "echo \"$DOCKER_HUB_PASSWORD\" | docker login -u \"$DOCKER_HUB_USERNAME\" --password-stdin"
                 }
             }
         }
         stage('Build & Push Docker Image') {
             steps {
-                sh """
+                bat """
                 docker build -t $DOCKER_IMAGE .
                 docker push $DOCKER_IMAGE
                 """
@@ -37,7 +37,7 @@ pipeline {
         stage('Deploy to AWS EC2') {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: '627a9a41-4dba-4bf0-a395-aaffa16f7533', keyFileVariable: 'SSH_KEY_PATH')]) {
-                    sh """
+                    bat """
                     ssh -o StrictHostKeyChecking=no -i $SSH_KEY_PATH $SSH_USER@$SSH_HOST <<EOF
                     docker login -u "$DOCKER_HUB_USERNAME" -p "$DOCKER_HUB_PASSWORD"
                     docker pull $DOCKER_IMAGE
