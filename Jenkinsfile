@@ -38,6 +38,7 @@ pipeline {
             steps {
                 bat """
                 docker build -t %DOCKER_IMAGE% .
+                docker tag %DOCKER_IMAGE% %DOCKER_IMAGE%-backup
                 docker push %DOCKER_IMAGE%
                 """
             }
