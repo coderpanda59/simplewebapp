@@ -56,7 +56,7 @@ pipeline {
         withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
             script {
                 def sshCommand = """
-                    ssh -o StrictHostKeyChecking=no -i C:/Users/pmasu/.ssh/jenkins.pem ubuntu@ec2-3-27-170-22.ap-southeast-2.compute.amazonaws.com "
+                    ssh -o StrictHostKeyChecking=no -i "C:\\Users\\pmasu\\.ssh\\jenkins.pem" ubuntu@ec2-3-27-170-22.ap-southeast-2.compute.amazonaws.com "
                     CONTAINER_NAME=\\"${env.CONTAINER_NAME}\\" &&
                     DOCKER_IMAGE=\\"${env.DOCKER_IMAGE}\\" &&
                     if docker ps -a --format '{{.Names}}' | grep -wq \\"\$CONTAINER_NAME\\"; then
@@ -67,7 +67,7 @@ pipeline {
                     docker pull \\"\$DOCKER_IMAGE\\" &&
                     docker run -d --name \\"\$CONTAINER_NAME\\" -p 8081:8081 \\"\$DOCKER_IMAGE\\" "
                 """
-                bat sshCommand
+                powershell sshCommand
             }
         }
     }
