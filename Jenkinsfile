@@ -57,7 +57,6 @@ pipeline {
             script {
                 def sshCommand = """
                     ssh -o StrictHostKeyChecking=no -i C:/Users/pmasu/.ssh/jenkins.pem ubuntu@ec2-3-27-170-22.ap-southeast-2.compute.amazonaws.com "
-                    echo 'SSH Connection Successful' &&
                     CONTAINER_NAME=\\"${env.CONTAINER_NAME}\\" &&
                     DOCKER_IMAGE=\\"${env.DOCKER_IMAGE}\\" &&
                     if docker ps -a --format '{{.Names}}' | grep -wq \\"\$CONTAINER_NAME\\"; then
