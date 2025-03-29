@@ -51,19 +51,29 @@ pipeline {
         }
 //            ssh -o StrictHostKeyChecking=no -i $env:SSH_KEY_PATH $env:SSH_USER@$env:SSH_HOST `
         stage('Deploy to AWS EC2') {
-            steps {
-                withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
-                    powershell '''
-  					ssh -o StrictHostKeyChecking=no -i C:/Users/pmasu/downloads/jenkins.pem ubuntu@ec2-13-239-12-141.ap-southeast-2.compute.amazonaws.com"echo 'SSH Connection Successful'"
-                    "docker stop $env:CONTAINER_NAME || true; `
-                    docker rm $env:CONTAINER_NAME || true; `
-                    docker system prune -f; `
-                    docker pull $env:DOCKER_IMAGE; `
-                    docker run -d --name $env:CONTAINER_NAME -p 8081:8081 $env:DOCKER_IMAGE"
-                    '''
-                }
-            }
-        }
+		    steps {
+		        withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
+		            powershell '''
+		            $SSH_CMD = "ssh -o StrictHostKeyChecking=no -i C:/Users/pmasu/downloads/jenkins.pem ubuntu@ec2-13-239-12-141.ap-southeast-2.compute.amazonaws.com"
+		            Write-Host "Testing SSH Connection..."
+		            try {
+		                Invoke-Expression "$SSH_CMD 'echo SSH Connection Successful'"
+		                Write-Host "SSH Connection Established."
+		
+		                Invoke-Expression "$SSH_CMD 'docker stop springboot-app || true; \
+		                    docker rm springboot-app || true; \
+		                    docker system prune -f; \
+		                    docker pull pandurang70/springboot-app:latest; \
+		                    docker run -d --name springboot-app -p 8081:8081 pandurang70/springboot-app:latest'"
+		            } catch {
+		                Write-Error "SSH Connection Failed!"
+		                exit 1
+		            }
+		            '''
+		        }
+		    }
+       }
+
 
         stage('Health Check') {
             steps {
