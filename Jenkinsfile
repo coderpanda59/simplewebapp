@@ -2,7 +2,7 @@ pipeline {
     agent any
     environment {
         SSH_USER = "ubuntu"
-        SSH_HOST = "ec2-13-239-12-141.ap-southeast-2.compute.amazonaws.com"
+        SSH_HOST = "ec2-3-27-170-22.ap-southeast-2.compute.amazonaws.com"
         APP_DIR = "/home/ubuntu/app"
         DOCKER_IMAGE = "pandurang70/springboot-app:latest"
         CONTAINER_NAME = "springboot-app"
@@ -54,13 +54,15 @@ pipeline {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
                     powershell '''
-  					ssh -o StrictHostKeyChecking=no -i C:/Users/pmasu/.ssh/jenkins.pem ubuntu@ec2-13-239-12-141.ap-southeast-2.compute.amazonaws.com"echo 'SSH Connection Successful'"
-                    "docker stop $env:CONTAINER_NAME || true; `
-                    docker rm $env:CONTAINER_NAME || true; `
-                    docker system prune -f; `
-                    docker pull $env:DOCKER_IMAGE; `
-                    docker run -d --name $env:CONTAINER_NAME -p 8081:8081 $env:DOCKER_IMAGE"
-                    '''
+  					ssh -o StrictHostKeyChecking=no -i C:/Users/pmasu/.ssh/jenkins.pem ubuntu@ec2-3-27-170-22.ap-southeast-2.compute.amazonaws.com << EOF
+                    echo 'SSH Connection Successful'
+	                docker stop $env:CONTAINER_NAME || true
+	                docker rm $env:CONTAINER_NAME || true
+	                docker system prune -f
+	                docker pull $env:DOCKER_IMAGE
+	                docker run -d --name $env:CONTAINER_NAME -p 8081:8081 $env:DOCKER_IMAGE
+	                EOF
+	            '''
                 }
             }
         }
