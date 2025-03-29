@@ -51,23 +51,22 @@ pipeline {
         }
 //            ssh -o StrictHostKeyChecking=no -i $env:SSH_KEY_PATH $env:SSH_USER@$env:SSH_HOST `
 //	            ssh -tt -o StrictHostKeyChecking=no -i C:/Users/pmasu/.ssh/jenkins.pem ubuntu@ec2-3-27-170-22.ap-southeast-2.compute.amazonaws.com "`
-	   stage('Deploy to AWS EC2') {
-    steps {
-        withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
-            powershell '''
-                $SSH_COMMAND = @"
-                docker stop $env:CONTAINER_NAME -ErrorAction SilentlyContinue
-                docker rm $env:CONTAINER_NAME -ErrorAction SilentlyContinue
-                docker system prune -f
-                docker pull $env:DOCKER_IMAGE
-                docker run -d --name $env:CONTAINER_NAME -p 8081:8081 $env:DOCKER_IMAGE
-                "@
+		   stage('Deploy to AWS EC2') {
+		    steps {
+		        withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
+		            powershell '''
+		                $SSH_COMMAND = "docker stop $env:CONTAINER_NAME; " +
+		                              "docker rm $env:CONTAINER_NAME; " +
+		                              "docker system prune -f; " +
+		                              "docker pull $env:DOCKER_IMAGE; " +
+		                              "docker run -d --name $env:CONTAINER_NAME -p 8081:8081 $env:DOCKER_IMAGE"
+		
+		                ssh -o StrictHostKeyChecking=no -i 'C:/Users/pmasu/.ssh/jenkins.pem' ubuntu@ec2-3-27-170-22.ap-southeast-2.compute.amazonaws.com "$SSH_COMMAND"
+		            '''
+		        }
+		    }
+		}
 
-                ssh -o StrictHostKeyChecking=no -i "C:/Users/pmasu/.ssh/jenkins.pem" ubuntu@ec2-3-27-170-22.ap-southeast-2.compute.amazonaws.com $SSH_COMMAND
-            '''
-        }
-    }
-}
 
 
 
