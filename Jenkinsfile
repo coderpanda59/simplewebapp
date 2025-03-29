@@ -11,24 +11,23 @@ pipeline {
         stage('Clone Repository') {
             steps {
                 git url: 'https://github.com/coderpanda59/simplewebapp.git', branch: 'main', credentialsId: '020d4854-fb5a-4cae-b6be-3876a63dab70'
-
             }
         }
         stage('Build Project') {
             steps {
-                bat "mvn clean package"
+                sh "mvn clean package"
             }
         }
         stage('Docker Login') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'pandurang70', passwordVariable: 'dckr_pat_qbiab33G-2ncPkvgb1rWPD2Cu3s')]) {
-                    bat "echo \"$DOCKER_HUB_PASSWORD\" | docker login -u \"$DOCKER_HUB_USERNAME\" --password-stdin"
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_HUB_USERNAME', passwordVariable: 'DOCKER_HUB_PASSWORD')]) {
+                    sh "echo \"$DOCKER_HUB_PASSWORD\" | docker login -u \"$DOCKER_HUB_USERNAME\" --password-stdin"
                 }
             }
         }
         stage('Build & Push Docker Image') {
             steps {
-                bat """
+                sh """
                 docker build -t $DOCKER_IMAGE .
                 docker push $DOCKER_IMAGE
                 """
@@ -37,8 +36,8 @@ pipeline {
         stage('Deploy to AWS EC2') {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: '627a9a41-4dba-4bf0-a395-aaffa16f7533', keyFileVariable: 'SSH_KEY_PATH')]) {
-                    bat """
-                    ssh -o StrictHostKeyChecking=no -i $SSH_KEY_PATH $SSH_USER@$SSH_HOST <<EOF
+                    sh """
+                    ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_PATH" "$SSH_USER@$SSH_HOST" <<EOF
                     docker login -u "$DOCKER_HUB_USERNAME" -p "$DOCKER_HUB_PASSWORD"
                     docker pull $DOCKER_IMAGE
                     docker stop $CONTAINER_NAME || true
