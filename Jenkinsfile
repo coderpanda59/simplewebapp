@@ -68,7 +68,7 @@ pipeline {
                     docker pull \\"\$DOCKER_IMAGE\\" &&
                     docker run -d --name \\"\$CONTAINER_NAME\\" -p 8081:8081 \\"\$DOCKER_IMAGE\\" "
                 """
-                sh sshCommand
+                bat sshCommand
             }
         }
     }
