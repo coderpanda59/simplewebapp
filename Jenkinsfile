@@ -2,7 +2,7 @@ pipeline {
     agent any
     environment {
         SSH_USER = "ubuntu"
-        SSH_HOST = "ec2-3-24-135-39.ap-southeast-2.compute.amazonaws.com"
+        SSH_HOST = "ec2-54-252-240-79.ap-southeast-2.compute.amazonaws.com"
         APP_DIR = "/home/ubuntu/app"
         DOCKER_IMAGE = "pandurang70/springboot-app:latest"
         CONTAINER_NAME = "springboot-app"
@@ -10,15 +10,18 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git url: 'https://github.com/coderpanda59/simplewebapp.git', 
-                    branch: 'main', 
-                    credentialsId: '020d4854-fb5a-4cae-b6be-3876a63dab70'
+                powershell '''
+                git clone -b main https://github.com/coderpanda59/simplewebapp.git app
+                cd app
+                '''
             }
         }
         
         stage('Build Project') {
             steps {
-                bat "mvn clean package"
+                powershell '''
+                mvn clean package
+                '''
             }
         }
         
@@ -27,86 +30,52 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', 
                         usernameVariable: 'DOCKER_HUB_USERNAME', 
                         passwordVariable: 'DOCKER_HUB_PASSWORD')]) {
-                    bat """
-                    docker login -u %DOCKER_HUB_USERNAME% -p %DOCKER_HUB_PASSWORD%
-                    """
+                    powershell '''
+                    docker login -u $env:DOCKER_HUB_USERNAME -p $env:DOCKER_HUB_PASSWORD
+                    '''
                 }
             }
         }
         
         stage('Build & Push Docker Image') {
             steps {
-                bat """
-                docker build -t %DOCKER_IMAGE% .
-                docker tag %DOCKER_IMAGE% %DOCKER_IMAGE%-backup
-                docker push %DOCKER_IMAGE%
-                """
+                powershell '''
+                docker build -t $env:DOCKER_IMAGE .
+                docker tag $env:DOCKER_IMAGE $env:DOCKER_IMAGE-backup
+                docker push $env:DOCKER_IMAGE
+                '''
             }
         }
         
-//        stage('Deploy to AWS EC2') {
-//            steps {
-//                withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', 
-//                        keyFileVariable: 'SSH_KEY_PATH')]) {
-//                    bat """
-//                    powershell -Command "& {
-//                        ssh -o StrictHostKeyChecking=no -i %SSH_KEY_PATH% %SSH_USER%@%SSH_HOST% \"
-//                        docker stop ${CONTAINER_NAME} || true;
-//                        docker rm ${CONTAINER_NAME} || true;
-//                        docker pull ${DOCKER_IMAGE};
-//                        docker run -d --name ${CONTAINER_NAME} -p 8081:8081 ${DOCKER_IMAGE};
-//                        \"""
-//                    }"
-//                    """
-//                }
-//            }
-//        }
-
-// 		stage('Deploy to AWS EC2') {
-//            steps {
-//                withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
-//                    bat """
-//                    powershell -Command "& {
-//                        ssh -o StrictHostKeyChecking=no -i %SSH_KEY_PATH% %SSH_USER%@%SSH_HOST% \"
-//                        'docker stop ${CONTAINER_NAME} || exit 0; docker rm ${CONTAINER_NAME} || exit 0; docker pull ${DOCKER_IMAGE}; docker run -d --name ${CONTAINER_NAME} -p 8081:8081 ${DOCKER_IMAGE};'
-//                    }"
-//                    """
-//                }
-//            }
-//        }
-        
-      stage('Deploy to AWS EC2') {
-    steps {
-        withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
-            bat """
-            powershell -Command "& {
-            /*    ssh -o StrictHostKeyChecking=no -i %SSH_KEY_PATH% %SSH_USER%@%SSH_HOST% \\"bash -s\\" << 'EOF'*/
-            ssh -o StrictHostKeyChecking=no -i %SSH_KEY_PATH% %SSH_USER%@%SSH_HOST% "bash -s" << 'EOF'
-
-                docker stop ${CONTAINER_NAME} || true
-                docker rm ${CONTAINER_NAME} || true
-                docker system prune -f
-                docker pull ${DOCKER_IMAGE}
-                docker run -d --name ${CONTAINER_NAME} -p 8081:8081 ${DOCKER_IMAGE}
-                EOF
-            }"
-            """
+        stage('Deploy to AWS EC2') {
+            steps {
+                withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
+                    powershell '''
+                    ssh -o StrictHostKeyChecking=no -i $env:SSH_KEY_PATH $env:SSH_USER@$env:SSH_HOST `
+                    "docker stop $env:CONTAINER_NAME || true; `
+                    docker rm $env:CONTAINER_NAME || true; `
+                    docker system prune -f; `
+                    docker pull $env:DOCKER_IMAGE; `
+                    docker run -d --name $env:CONTAINER_NAME -p 8081:8081 $env:DOCKER_IMAGE"
+                    '''
+                }
+            }
         }
-    }
-}
-
 
         stage('Health Check') {
             steps {
-                bat """
-                powershell -Command "& {
-                    try {
-                        Invoke-WebRequest -Uri http://%SSH_HOST%:8081 -UseBasicParsing
-                    } catch {
-                        Write-Output 'Application failed to start'
+                powershell '''
+                try {
+                    $response = Invoke-WebRequest -Uri http://$env:SSH_HOST:8081 -UseBasicParsing
+                    if ($response.StatusCode -eq 200) {
+                        Write-Host "Application is running successfully!"
+                    } else {
+                        Write-Error "Application failed to start!"
                     }
-                }"
-                """
+                } catch {
+                    Write-Error "Application failed to start!"
+                }
+                '''
             }
         }
     }
