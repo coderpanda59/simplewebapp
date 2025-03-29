@@ -44,18 +44,31 @@ pipeline {
             }
         }
         
-        stage('Deploy to AWS EC2') {
+//        stage('Deploy to AWS EC2') {
+//            steps {
+//                withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', 
+//                        keyFileVariable: 'SSH_KEY_PATH')]) {
+//                    bat """
+//                    powershell -Command "& {
+//                        ssh -o StrictHostKeyChecking=no -i %SSH_KEY_PATH% %SSH_USER%@%SSH_HOST% \"
+//                        docker stop ${CONTAINER_NAME} || true;
+//                        docker rm ${CONTAINER_NAME} || true;
+//                        docker pull ${DOCKER_IMAGE};
+//                        docker run -d --name ${CONTAINER_NAME} -p 8081:8081 ${DOCKER_IMAGE};
+//                        \"""
+//                    }"
+//                    """
+//                }
+//            }
+//        }
+
+ 		stage('Deploy to AWS EC2') {
             steps {
-                withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', 
-                        keyFileVariable: 'SSH_KEY_PATH')]) {
+                withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
                     bat """
                     powershell -Command "& {
                         ssh -o StrictHostKeyChecking=no -i %SSH_KEY_PATH% %SSH_USER%@%SSH_HOST% \"
-                        docker stop ${CONTAINER_NAME} || true;
-                        docker rm ${CONTAINER_NAME} || true;
-                        docker pull ${DOCKER_IMAGE};
-                        docker run -d --name ${CONTAINER_NAME} -p 8081:8081 ${DOCKER_IMAGE};
-                        \"""
+                        'docker stop ${CONTAINER_NAME} || exit 0; docker rm ${CONTAINER_NAME} || exit 0; docker pull ${DOCKER_IMAGE}; docker run -d --name ${CONTAINER_NAME} -p 8081:8081 ${DOCKER_IMAGE};'
                     }"
                     """
                 }
