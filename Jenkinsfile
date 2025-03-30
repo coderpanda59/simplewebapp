@@ -100,10 +100,10 @@ pipeline {
 		                docker system prune -f;
 		
 		                echo 'Pulling latest Docker image: \$DOCKER_IMAGE';
-		                docker pull \$DOCKER_IMAGE;
+		                docker pull pandurang70/springboot-app:latest;
 		
 		                echo 'Running new container on port 9090';
-		                docker run -d --name \$CONTAINER_NAME -p 9090:9090 \$DOCKER_IMAGE;
+		                docker run -d --name springboot-app -p 9090:9090 pandurang70/springboot-app:latest;
 		                "
 		                """
 		
