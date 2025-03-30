@@ -2,7 +2,7 @@ pipeline {
     agent any
     environment {
         SSH_USER = "ubuntu"
-        SSH_HOST = "ec2-3-25-106-160.ap-southeast-2.compute.amazonaws.com"
+        SSH_HOST = "ec2-54-66-184-101.ap-southeast-2.compute.amazonaws.com"
         APP_DIR = "/home/ubuntu/app"
         DOCKER_IMAGE = "pandurang70/springboot-app:latest"
         CONTAINER_NAME = "springboot-app"
@@ -81,17 +81,17 @@ pipeline {
 		        withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
 		            script {
 		                def sshCommand = """
-		                    ssh -tt -o StrictHostKeyChecking=no -i "C:/ProgramData/Jenkins/.ssh/jenkins.pem" ubuntu@ec2-3-25-106-160.ap-southeast-2.compute.amazonaws.com "
+		                    ssh -tt -o StrictHostKeyChecking=no -i "C:/ProgramData/Jenkins/.ssh/jenkins.pem" ubuntu@ec2-54-66-184-101.ap-southeast-2.compute.amazonaws.com "
 		                    CONTAINER_NAME='springboot-app';
 		                    DOCKER_IMAGE='pandurang70/springboot-app:latest';
-		                    NEW_PORT=9090
+		                    
 		                    if docker ps -a --format '{{.Names}}' | grep -wq "\$CONTAINER_NAME"; then
 		                        docker stop "\$CONTAINER_NAME";
 		                        docker rm "\$CONTAINER_NAME";
 		                    fi;
 		                    docker system prune -f;
 		                    docker pull "\$DOCKER_IMAGE";
-		                    docker run -d --name "\$CONTAINER_NAME" -p \$NEW_PORT:\$NEW_PORT "\$DOCKER_IMAGE";
+		                    docker run -d --name "\$CONTAINER_NAME" -p 9090:9090 "\$DOCKER_IMAGE";
 		                    "
 		                """
 		                powershell """
