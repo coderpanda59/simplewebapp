@@ -56,7 +56,7 @@ pipeline {
         withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
             script {
                 def sshCommand = """
-                    ssh -o StrictHostKeyChecking=no -i "C:\\ProgramData\\Jenkins\\.ssh\\jenkins.pem" ubuntu@ec2-3-104-76-101.ap-southeast-2.compute.amazonaws.com"
+                    ssh -tt -o StrictHostKeyChecking=no -i "C:\\ProgramData\\Jenkins\\.ssh\\jenkins.pem" ubuntu@ec2-3-104-76-101.ap-southeast-2.compute.amazonaws.com"
                     									 
                     CONTAINER_NAME=\\"${env.CONTAINER_NAME}\\" &&
                     DOCKER_IMAGE=\\"${env.DOCKER_IMAGE}\\" &&
