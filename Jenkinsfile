@@ -2,7 +2,7 @@ pipeline {
     agent any
     environment {
         SSH_USER = "ubuntu"
-        SSH_HOST = "ec2-3-104-76-101.ap-southeast-2.compute.amazonaws.com"
+        SSH_HOST = "ec2-3-25-245-15.ap-southeast-2.compute.amazonaws.com"
         APP_DIR = "/home/ubuntu/app"
         DOCKER_IMAGE = "pandurang70/springboot-app:latest"
         CONTAINER_NAME = "springboot-app"
@@ -81,7 +81,7 @@ pipeline {
 		        withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
 		            script {
 		                def sshCommand = """
-		                    ssh -tt -o StrictHostKeyChecking=no -i "C:/ProgramData/Jenkins/.ssh/jenkins.pem" ubuntu@ec2-3-104-76-101.ap-southeast-2.compute.amazonaws.com "
+		                    ssh -tt -o StrictHostKeyChecking=no -i "C:/ProgramData/Jenkins/.ssh/jenkins.pem" ubuntu@ec2-3-25-245-15.ap-southeast-2.compute.amazonaws.com "
 		                    CONTAINER_NAME='${env.CONTAINER_NAME}';
 		                    DOCKER_IMAGE='${env.DOCKER_IMAGE}';
 		                    if docker ps -a --format '{{.Names}}' | grep -wq "\$CONTAINER_NAME"; then
