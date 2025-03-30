@@ -51,28 +51,31 @@ pipeline {
         }
 //            ssh -o StrictHostKeyChecking=no -i $env:SSH_KEY_PATH $env:SSH_USER@$env:SSH_HOST `
 //	            ssh -tt -o StrictHostKeyChecking=no -i C:/Users/pmasu/.ssh/jenkins.pem ubuntu@ec2-3-27-170-22.ap-southeast-2.compute.amazonaws.com "`
-		 stage('Deploy to AWS EC2') {
-  			  steps {
+		stage('Deploy to AWS EC2') {
+		    steps {
 		        withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
 		            script {
 		                def sshCommand = """
-		                    ssh -tt -o StrictHostKeyChecking=no -i "C:\\ProgramData\\Jenkins\\.ssh\\jenkins.pem" ubuntu@ec2-3-104-76-101.ap-southeast-2.compute.amazonaws.com
-		                    									 
+		                    ssh -tt -o StrictHostKeyChecking=no -i "C:\\ProgramData\\Jenkins\\.ssh\\jenkins.pem" ubuntu@ec2-3-104-76-101.ap-southeast-2.compute.amazonaws.com << 'EOF'
+		                    
 		                    CONTAINER_NAME="${env.CONTAINER_NAME}";
 		                    DOCKER_IMAGE="${env.DOCKER_IMAGE}";
 		                    if docker ps -a --format '{{.Names}}' | grep -wq "\$CONTAINER_NAME"; then
 		                        docker stop "\$CONTAINER_NAME";
-		                        docker rm "\$CONTAINER_NAME"
+		                        docker rm "\$CONTAINER_NAME";
 		                    fi;
 		                    docker system prune -f;
 		                    docker pull "\$DOCKER_IMAGE";
-		                    docker run -d --name "\$CONTAINER_NAME" -p 8081:8081 "\$DOCKER_IMAGE"
+		                    docker run -d --name "\$CONTAINER_NAME" -p 8081:8081 "\$DOCKER_IMAGE";
+		
+		                    EOF
 		                """
-		                powershell sshCommand
+		                sh sshCommand
 		            }
 		        }
 		    }
 		}
+
 
 
 
