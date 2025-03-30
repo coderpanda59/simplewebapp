@@ -82,6 +82,8 @@ pipeline {
 		            script {
 		                def sshCommand = """
 		                ssh -tt -o StrictHostKeyChecking=no -i C:/ProgramData/Jenkins/.ssh/jenkins.pem ubuntu@ec2-54-66-184-101.ap-southeast-2.compute.amazonaws.com " 
+		                echo 'Logging into Docker Hub...'
+                        echo '${DOCKER_PASSWORD}' | docker login -u '${DOCKER_USERNAME}' --password-stdin
 		                CONTAINER_NAME='springboot-app'; 
 		                DOCKER_IMAGE='pandurang70/springboot-app:latest';
 		
