@@ -107,7 +107,7 @@ pipeline {
 		                """
 		                
 		                echo "🔹 Executing SSH command from Jenkins..."
-		                sh "${sshCommand}"
+		                powershell  "${sshCommand}"
 		            }
 		        }
 		    }
