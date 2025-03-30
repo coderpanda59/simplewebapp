@@ -78,16 +78,14 @@ pipeline {
 
 		stage('Deploy to AWS EC2') {
 		    steps {
-		        withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH').
-		        usernamePassword(credentialsId: 'docker-hub-credentials', 
-                        usernameVariable: 'DOCKER_HUB_USERNAME', 
-                        passwordVariable: 'DOCKER_HUB_PASSWORD')
-		        ]) {
+		        withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')])
+		      
+		         {
 		            script {
 		                def sshCommand = """
 		                ssh -tt -o StrictHostKeyChecking=no -i C:/ProgramData/Jenkins/.ssh/jenkins.pem ubuntu@ec2-54-66-184-101.ap-southeast-2.compute.amazonaws.com " 
-		                echo 'Logging into Docker Hub...'
-                        echo '${DOCKER_HUB_PASSWORD}' | docker login -u '${DOCKER_HUB_USERNAME}' --password-stdin
+		                
+                       
 		                CONTAINER_NAME='springboot-app'; 
 		                DOCKER_IMAGE='pandurang70/springboot-app:latest';
 		
