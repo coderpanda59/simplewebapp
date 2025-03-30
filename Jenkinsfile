@@ -78,7 +78,9 @@ pipeline {
 
 		stage('Deploy to AWS EC2') {
 		    steps {
-		        withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
+		        withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH').
+		        usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')
+		        ]) {
 		            script {
 		                def sshCommand = """
 		                ssh -tt -o StrictHostKeyChecking=no -i C:/ProgramData/Jenkins/.ssh/jenkins.pem ubuntu@ec2-54-66-184-101.ap-southeast-2.compute.amazonaws.com " 
