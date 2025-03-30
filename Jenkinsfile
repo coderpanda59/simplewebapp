@@ -1,4 +1,4 @@
-pipeline {
+pipeline { 
     agent any
     environment {
         SSH_USER = "ubuntu"
@@ -6,96 +6,116 @@ pipeline {
         APP_DIR = "/home/ubuntu/app"
         DOCKER_IMAGE = "pandurang70/springboot-app:latest"
         CONTAINER_NAME = "springboot-app"
-        REPO_URL = "https://github.com/coderpanda59/simplewebapp.git"
     }
     stages {
         stage('Clone Repository') {
             steps {
-                script {
-                    if (fileExists('app')) {
-                        echo 'Removing existing app directory...'
-                        sh 'rm -rf app'
-                    }
-                    echo 'Cloning repository...'
-                    sh "git clone -b main ${env.REPO_URL} app"
-                }
+                powershell '''
+                 if (Test-Path "app") {
+                Remove-Item -Recurse -Force "app"
+           	 }
+                git clone -b main https://github.com/coderpanda59/simplewebapp.git app
+                cd app
+                '''
             }
         }
-
+        
         stage('Build Project') {
             steps {
-                script {
-                    echo 'Building Maven project...'
-                    dir('app') {
-                        sh 'mvn clean package'
-                    }
-                }
+                powershell '''
+                mvn clean package
+                '''
             }
         }
-
+        
         stage('Docker Login') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', 
                         usernameVariable: 'DOCKER_HUB_USERNAME', 
                         passwordVariable: 'DOCKER_HUB_PASSWORD')]) {
-                    script {
-                        echo 'Logging into Docker Hub...'
-                        sh "docker login -u ${env.DOCKER_HUB_USERNAME} -p ${env.DOCKER_HUB_PASSWORD}"
-                    }
+                    powershell '''
+                    docker login -u $env:DOCKER_HUB_USERNAME -p $env:DOCKER_HUB_PASSWORD
+                    '''
                 }
             }
         }
-
+        
         stage('Build & Push Docker Image') {
             steps {
-                script {
-                    echo 'Building Docker image...'
-                    sh "docker build -t ${env.DOCKER_IMAGE} app"
-                    echo 'Tagging Docker image...'
-                    sh "docker tag ${env.DOCKER_IMAGE} ${env.DOCKER_IMAGE}-backup"
-                    echo 'Pushing Docker image to Docker Hub...'
-                    sh "docker push ${env.DOCKER_IMAGE}"
-                }
+                powershell '''
+                docker build -t $env:DOCKER_IMAGE .
+                docker tag $env:DOCKER_IMAGE $env:DOCKER_IMAGE-backup
+                docker push $env:DOCKER_IMAGE
+                '''
             }
         }
+//            ssh -o StrictHostKeyChecking=no -i $env:SSH_KEY_PATH $env:SSH_USER@$env:SSH_HOST `
+//	            ssh -tt -o StrictHostKeyChecking=no -i C:/Users/pmasu/.ssh/jenkins.pem ubuntu@ec2-3-27-170-22.ap-southeast-2.compute.amazonaws.com "`
+//		stage('Deploy to AWS EC2') {
+//		    steps {
+//		        withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
+//		            script {
+//		                def sshCommand = """
+//		                    ssh -tt -o StrictHostKeyChecking=no -i "C:\\ProgramData\\Jenkins\\.ssh\\jenkins.pem" ubuntu@ec2-3-104-76-101.ap-southeast-2.compute.amazonaws.com << 'EOF'
+//		                    
+//		                    CONTAINER_NAME="${env.CONTAINER_NAME}";
+//		                    DOCKER_IMAGE="${env.DOCKER_IMAGE}";
+//		                    if docker ps -a --format '{{.Names}}' | grep -wq "\$CONTAINER_NAME"; then
+//		                        docker stop "\$CONTAINER_NAME";
+//		                        docker rm "\$CONTAINER_NAME";
+//		                    fi;
+//		                    docker system prune -f;
+//		                    docker pull "\$DOCKER_IMAGE";
+//		                    docker run -d --name "\$CONTAINER_NAME" -p 8081:8081 "\$DOCKER_IMAGE";
+//		
+//		                    EOF
+//		                """
+//		                sh sshCommand
+//		            }
+//		        }
+//		    }
+//		}
 
-        stage('Deploy to AWS EC2') {
-            steps {
-                withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
-                    script {
-                        echo 'Deploying Docker container to AWS EC2 instance...'
-                        sh """
-                        ssh -tt -o StrictHostKeyChecking=no -i ${env.SSH_KEY_PATH} ${env.SSH_USER}@${env.SSH_HOST} << 'EOF'
-                        set -e;
-                        CONTAINER_NAME="${env.CONTAINER_NAME}";
-                        DOCKER_IMAGE="${env.DOCKER_IMAGE}";
-                        if docker ps -a --format '{{.Names}}' | grep -wq "\$CONTAINER_NAME"; then
-                            docker stop "\$CONTAINER_NAME";
-                            docker rm "\$CONTAINER_NAME";
-                        fi;
-                        docker system prune -f;
-                        docker pull "\$DOCKER_IMAGE";
-                        docker run -d --name "\$CONTAINER_NAME" -p 8081:8081 "\$DOCKER_IMAGE";
-                        EOF
-                        """
-                    }
-                }
-            }
-        }
+		stage('Deploy to AWS EC2') {
+		    steps {
+		        withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
+		            script {
+		                def sshCommand = """
+		                    ssh -tt -o StrictHostKeyChecking=no -i "C:/ProgramData/Jenkins/.ssh/jenkins.pem" ubuntu@ec2-3-25-106-160.ap-southeast-2.compute.amazonaws.com "
+		                    CONTAINER_NAME='${env.CONTAINER_NAME}';
+		                    DOCKER_IMAGE='${env.DOCKER_IMAGE}';
+		                    if docker ps -a --format '{{.Names}}' | grep -wq "\$CONTAINER_NAME"; then
+		                        docker stop "\$CONTAINER_NAME";
+		                        docker rm "\$CONTAINER_NAME";
+		                    fi;
+		                    docker system prune -f;
+		                    docker pull "\$DOCKER_IMAGE";
+		                    docker run -d --name "\$CONTAINER_NAME" -p 8081:8081 "\$DOCKER_IMAGE";
+		                    "
+		                """
+		                powershell """
+		                ${sshCommand}
+		                """
+		            }
+		        }
+		    }
+		}
+
 
         stage('Health Check') {
             steps {
-                script {
-                    echo 'Performing health check...'
-                    sh """
-                    HTTP_RESPONSE=\$(curl -s -o /dev/null -w "%{http_code}" http://${env.SSH_HOST}:8081)
-                    if [ "\$HTTP_RESPONSE" -eq 200 ]; then
-                        echo "Application is running successfully!"
-                    else
-                        echo "Application failed to start!" && exit 1
-                    fi
-                    """
+                powershell '''
+                try {
+                    $response = Invoke-WebRequest -Uri http://$env:SSH_HOST:8081 -UseBasicParsing
+                    if ($response.StatusCode -eq 200) {
+                        Write-Host "Application is running successfully!"
+                    } else {
+                        Write-Error "Application failed to start!"
+                    }
+                } catch {
+                    Write-Error "Application failed to start!"
                 }
+                '''
             }
         }
     }
