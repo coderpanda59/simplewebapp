@@ -77,41 +77,38 @@ pipeline {
 //		}
 
 		stage('Deploy to AWS EC2') {
-		    steps {
-		        withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
-		            script {
-		                def sshCommand = """
-		                ssh -tt -o StrictHostKeyChecking=no -i "C:/ProgramData/Jenkins/.ssh/jenkins.pem" ubuntu@ec2-54-66-184-101.ap-southeast-2.compute.amazonaws.com << 'EOF'
-		                set -x  # Debug mode to show executed commands
-		                CONTAINER_NAME='springboot-app'
-		                DOCKER_IMAGE='pandurang70/springboot-app:latest'
-		
-		                echo "🔹 Checking if container exists..."
-		                if docker ps -a --format '{{.Names}}' | grep -wq "\$CONTAINER_NAME"; then
-		                    echo "🛑 Stopping and removing existing container..."
-		                    docker stop "\$CONTAINER_NAME"
-		                    docker rm "\$CONTAINER_NAME"
-		                fi
-		
-		                echo "🧹 Cleaning up Docker system..."
-		                docker system prune -f
-		
-		                echo "⬇️ Pulling latest Docker image: \$DOCKER_IMAGE"
-		                docker pull "\$DOCKER_IMAGE"
-		
-		                echo "🚀 Running new container on port 9090"
-		                docker run -d --name "\$CONTAINER_NAME" -p 9090:9090 "\$DOCKER_IMAGE"
-		
-		                echo "✅ Deployment complete!"
-		                EOF
-		                """
-		                
-		                echo "🔹 Executing SSH command from Jenkins..."
-		                powershell  "${sshCommand}"
-		            }
-		        }
-		    }
-		}
+    steps {
+        withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
+            script {
+                def sshCommand = """
+                C:\\Windows\\System32\\OpenSSH\\ssh.exe -o StrictHostKeyChecking=no -i "C:/ProgramData/Jenkins/.ssh/jenkins.pem" ubuntu@ec2-54-66-184-101.ap-southeast-2.compute.amazonaws.com " 
+                CONTAINER_NAME='springboot-app'; 
+                DOCKER_IMAGE='pandurang70/springboot-app:latest';
+
+                echo '🔹 Checking if container exists...';
+                if docker ps -a --format '{{.Names}}' | grep -wq \"\$CONTAINER_NAME\"; then
+                    echo '🛑 Stopping and removing existing container...';
+                    docker stop \"\$CONTAINER_NAME\";
+                    docker rm \"\$CONTAINER_NAME\";
+                fi;
+
+                echo '🧹 Cleaning up Docker system...';
+                docker system prune -f;
+
+                echo '⬇️ Pulling latest Docker image: \$DOCKER_IMAGE';
+                docker pull \"\$DOCKER_IMAGE\";
+
+                echo '🚀 Running new container on port 9090';
+                docker run -d --name \"\$CONTAINER_NAME\" -p 9090:9090 \"\$DOCKER_IMAGE\";
+                "
+                """
+
+                echo "🔹 Executing SSH command from Jenkins..."
+                powershell "& ${sshCommand}"
+            }
+        }
+    }
+}
 
 
 
