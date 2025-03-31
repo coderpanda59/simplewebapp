@@ -1,4 +1,4 @@
-pipeline { 
+pipeline {
     agent any
     environment {
         SSH_USER = "ubuntu"
@@ -10,10 +10,10 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                powershell '''
-                 if (Test-Path "app") {
-                Remove-Item -Recurse -Force "app"
-           	 }
+                sh '''
+                if [ -d "app" ]; then
+                    rm -rf app
+                fi
                 git clone -b main https://github.com/coderpanda59/simplewebapp.git app
                 cd app
                 '''
@@ -22,7 +22,7 @@ pipeline {
         
         stage('Build Project') {
             steps {
-                powershell '''
+                sh '''
                 mvn clean package
                 '''
             }
@@ -33,8 +33,8 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', 
                         usernameVariable: 'DOCKER_HUB_USERNAME', 
                         passwordVariable: 'DOCKER_HUB_PASSWORD')]) {
-                    powershell '''
-                    docker login -u $env:DOCKER_HUB_USERNAME -p $env:DOCKER_HUB_PASSWORD
+                    sh '''
+                    echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USERNAME" --password-stdin
                     '''
                 }
             }
@@ -42,93 +42,53 @@ pipeline {
         
         stage('Build & Push Docker Image') {
             steps {
-                powershell '''
-                docker build -t $env:DOCKER_IMAGE .
-                docker tag $env:DOCKER_IMAGE $env:DOCKER_IMAGE-backup
-                docker push $env:DOCKER_IMAGE
+                sh '''
+                docker build -t $DOCKER_IMAGE .
+                docker tag $DOCKER_IMAGE $DOCKER_IMAGE-backup
+                docker push $DOCKER_IMAGE
                 '''
             }
         }
-//            ssh -o StrictHostKeyChecking=no -i $env:SSH_KEY_PATH $env:SSH_USER@$env:SSH_HOST `
-//	            ssh -tt -o StrictHostKeyChecking=no -i C:/Users/pmasu/.ssh/jenkins.pem ubuntu@ec2-3-27-170-22.ap-southeast-2.compute.amazonaws.com "`
-//		stage('Deploy to AWS EC2') {
-//		    steps {
-//		        withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
-//		            script {
-//		                def sshCommand = """
-//		                    ssh -tt -o StrictHostKeyChecking=no -i "C:\\ProgramData\\Jenkins\\.ssh\\jenkins.pem" ubuntu@ec2-3-104-76-101.ap-southeast-2.compute.amazonaws.com << 'EOF'
-//		                    
-//		                    CONTAINER_NAME="${env.CONTAINER_NAME}";
-//		                    DOCKER_IMAGE="${env.DOCKER_IMAGE}";
-//		                    if docker ps -a --format '{{.Names}}' | grep -wq "\$CONTAINER_NAME"; then
-//		                        docker stop "\$CONTAINER_NAME";
-//		                        docker rm "\$CONTAINER_NAME";
-//		                    fi;
-//		                    docker system prune -f;
-//		                    docker pull "\$DOCKER_IMAGE";
-//		                    docker run -d --name "\$CONTAINER_NAME" -p 8081:8081 "\$DOCKER_IMAGE";
-//		
-//		                    EOF
-//		                """
-//		                sh sshCommand
-//		            }
-//		        }
-//		    }
-//		}
-
-		stage('Deploy to AWS EC2') {
-		    steps {
-		        withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')])
-		      
-		         {
-		            script {
-		                def sshCommand = """
-		                ssh -tt -o StrictHostKeyChecking=no -i C:/ProgramData/Jenkins/.ssh/jenkins.pem ubuntu@ec2-13-239-222-241.ap-southeast-2.compute.amazonaws.com " 
-		                
-                       
-		                CONTAINER_NAME='springboot-app'; 
-		                DOCKER_IMAGE='pandurang70/springboot-app:latest';
-		
-		                echo 'Checking if container exists...';
-		                if docker ps -a --format '{{.Names}}' | grep -wq \$CONTAINER_NAME; then
-		                    echo 'Stopping and removing existing container...';
-		                    docker stop \$CONTAINER_NAME;
-		                    docker rm \$CONTAINER_NAME;
-		                fi;
-		
-		                echo 'Cleaning up Docker system...';
-		                docker system prune -f;
-		
-		                echo 'Pulling latest Docker image: \$DOCKER_IMAGE';
-		                docker pull pandurang70/springboot-app:latest;
-		
-		                echo 'Running new container on port 9090';
-		                docker run -d --name springboot-app -p 9090:9090 pandurang70/springboot-app:latest;
-		                "
-		                """
-		
-		              
-		            }
-		        }
-		    }
-		}
-
-
-
-
+        
+        stage('Deploy to AWS EC2') {
+            steps {
+                withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu-aws', keyFileVariable: 'SSH_KEY_PATH')]) {
+                    sh '''
+                    ssh -tt -o StrictHostKeyChecking=no -i $SSH_KEY_PATH $SSH_USER@$SSH_HOST << 'EOF'
+                    CONTAINER_NAME="$CONTAINER_NAME"
+                    DOCKER_IMAGE="$DOCKER_IMAGE"
+                    
+                    echo 'Checking if container exists...'
+                    if docker ps -a --format '{{.Names}}' | grep -wq "$CONTAINER_NAME"; then
+                        echo 'Stopping and removing existing container...'
+                        docker stop "$CONTAINER_NAME"
+                        docker rm "$CONTAINER_NAME"
+                    fi
+                    
+                    echo 'Cleaning up Docker system...'
+                    docker system prune -f
+                    
+                    echo 'Pulling latest Docker image: $DOCKER_IMAGE'
+                    docker pull "$DOCKER_IMAGE"
+                    
+                    echo 'Running new container on port 9090'
+                    docker run -d --name "$CONTAINER_NAME" -p 9090:9090 "$DOCKER_IMAGE"
+                    EOF
+                    '''
+                }
+            }
+        }
+        
         stage('Health Check') {
             steps {
-                powershell '''
-                try {
-                    $response = Invoke-WebRequest -Uri http://$env:SSH_HOST:8081 -UseBasicParsing
-                    if ($response.StatusCode -eq 200) {
-                        Write-Host "Application is running successfully!"
-                    } else {
-                        Write-Error "Application failed to start!"
-                    }
-                } catch {
-                    Write-Error "Application failed to start!"
-                }
+                sh '''
+                sleep 10
+                if curl -s --head --request GET http://$SSH_HOST:9090 | grep "200 OK" > /dev/null; then 
+                    echo "Application is running successfully!"
+                else 
+                    echo "Application failed to start!" >&2
+                    exit 1
+                fi
                 '''
             }
         }
