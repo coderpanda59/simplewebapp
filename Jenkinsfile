@@ -7,7 +7,7 @@ pipeline {
         TOMCAT_URL = 'http://localhost:9090/manager/text'
         TOMCAT_USER = 'admin'
         TOMCAT_PASSWORD = 'admin123'
-        WAR_FILE_NAME = 'your-project-name.war'  // Replace with actual WAR file name
+        WAR_FILE_NAME = 'simplewebapp.war'  // Replace with actual WAR file name
     }
 
     stages {
