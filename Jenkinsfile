@@ -2,7 +2,7 @@ pipeline {
     agent any
     environment {
         SSH_USER = "ubuntu"
-        SSH_HOST = "ec2-54-66-184-101.ap-southeast-2.compute.amazonaws.com"
+        SSH_HOST = "ec2-13-239-222-241.ap-southeast-2.compute.amazonaws.com"
         APP_DIR = "/home/ubuntu/app"
         DOCKER_IMAGE = "pandurang70/springboot-app:latest"
         CONTAINER_NAME = "springboot-app"
@@ -83,7 +83,7 @@ pipeline {
 		         {
 		            script {
 		                def sshCommand = """
-		                ssh -tt -o StrictHostKeyChecking=no -i C:/ProgramData/Jenkins/.ssh/jenkins.pem ubuntu@ec2-54-66-184-101.ap-southeast-2.compute.amazonaws.com " 
+		                ssh -tt -o StrictHostKeyChecking=no -i C:/ProgramData/Jenkins/.ssh/jenkins.pem ubuntu@ec2-13-239-222-241.ap-southeast-2.compute.amazonaws.com " 
 		                
                        
 		                CONTAINER_NAME='springboot-app'; 
