@@ -18,8 +18,8 @@ pipeline {
                 script {
                     // Enable BuildKit if desired
                     sh 'export DOCKER_BUILDKIT=1'
-                    // Using docker buildx for more efficient builds
-                    sh 'docker buildx build -t $DOCKER_IMAGE .'
+                    // Using docker buildx with correct flag '--tag' instead of '-t'
+                    sh 'docker buildx build --tag $DOCKER_IMAGE .'
                 }
             }
         }
