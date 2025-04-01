@@ -2,47 +2,35 @@ pipeline {
     agent any
 
     environment {
-        JAVA_HOME = tool 'jdk17'  // Ensure 'jdk17' is configured in Jenkins
-        MAVEN_HOME = tool 'maven' // Ensure 'maven' is configured in Jenkins
-        TOMCAT_URL = 'http://localhost:9090/manager/text'
-        TOMCAT_USER = 'admin'
-        TOMCAT_PASSWORD = 'admin123'
-        WAR_FILE_NAME = 'simplewebapp.war'  // Replace with actual WAR file name
+        DOCKER_IMAGE = "myapp:latest"
+        CONTAINER_NAME = "myapp-container"
     }
 
     stages {
         stage('Clone Repository') {
             steps {
-                checkout scm  // Jenkins will pull from the configured Git repo
+                git branch: 'main', url: 'https://github.com/coderpanda59/simplewebapp.git'
             }
         }
 
-        stage('Build') {
+        stage('Build Docker Image') {
             steps {
-                bat "${MAVEN_HOME}\\bin\\mvn clean package -DskipTests"
+                sh 'docker build -t $DOCKER_IMAGE .'
             }
         }
 
-        stage('Test') {
-            steps {
-                bat "${MAVEN_HOME}\\bin\\mvn test"
-            }
-        }
-
-        stage('Deploy to Tomcat') {
+        stage('Stop Existing Container') {
             steps {
                 script {
-                    def warFilePath = "target/${WAR_FILE_NAME}"
-                    def tomcatDeployUrl = "${TOMCAT_URL}/deploy?path=/your-app-name&update=true"  // Replace "your-app-name"
-
-                    if (fileExists(warFilePath)) {
-                        bat """
-                        curl -u ${TOMCAT_USER}:${TOMCAT_PASSWORD} -T ${warFilePath} "${tomcatDeployUrl}"
-                        """
-                    } else {
-                        error "WAR file not found: ${warFilePath}"
-                    }
+                    sh "docker stop $CONTAINER_NAME || true"
+                    sh "docker rm $CONTAINER_NAME || true"
                 }
+            }
+        }
+
+        stage('Run New Container') {
+            steps {
+                sh 'docker run -d -p 8000:8000 --name $CONTAINER_NAME $DOCKER_IMAGE'
             }
         }
     }
