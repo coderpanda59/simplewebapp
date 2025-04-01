@@ -15,14 +15,21 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $DOCKER_IMAGE .'
+                script {
+                    // Enable BuildKit if desired
+                    sh 'export DOCKER_BUILDKIT=1'
+                    // Using docker buildx for more efficient builds
+                    sh 'docker buildx build -t $DOCKER_IMAGE .'
+                }
             }
         }
 
         stage('Stop Existing Container') {
             steps {
                 script {
+                    // Stop the existing container if it's running
                     sh "docker stop $CONTAINER_NAME || true"
+                    // Remove the container to ensure a clean start
                     sh "docker rm $CONTAINER_NAME || true"
                 }
             }
@@ -30,8 +37,18 @@ pipeline {
 
         stage('Run New Container') {
             steps {
-                sh 'docker run -d -p 8000:8000 --name $CONTAINER_NAME $DOCKER_IMAGE'
+                script {
+                    // Run the container in detached mode with port mapping
+                    sh 'docker run -d -p 8000:8000 --name $CONTAINER_NAME $DOCKER_IMAGE'
+                }
             }
+        }
+    }
+
+    post {
+        always {
+            // Clean up: Ensure Docker containers are removed after each build
+            sh "docker system prune -f"
         }
     }
 }
