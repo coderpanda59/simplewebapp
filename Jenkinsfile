@@ -4,7 +4,7 @@ pipeline {
     environment {
         JAVA_HOME = tool 'jdk17'  // Ensure 'jdk17' is configured in Jenkins
         MAVEN_HOME = tool 'maven' // Ensure 'maven' is configured in Jenkins
-        TOMCAT_URL = 'http://3.106.222.43:9090/manager/text'
+        TOMCAT_URL = 'http://3.25.70.223:9090/manager/text'
         TOMCAT_USER = 'admin'
         TOMCAT_PASSWORD = 'admin_password'
         WAR_FILE_NAME = 'simplewebapp.war'  // Replace with actual WAR file name
@@ -33,7 +33,7 @@ pipeline {
             steps {
                 script {
                     def warFilePath = "target/${WAR_FILE_NAME}"
-                    def tomcatDeployUrl = "${TOMCAT_URL}/deploy?path=/your-app-name&update=true"  // Replace "your-app-name"
+                    def tomcatDeployUrl = "${TOMCAT_URL}/deploy?path=/simplewebapp&update=true"  // Replace "your-app-name"
 
                     if (fileExists(warFilePath)) {
                         bat """
