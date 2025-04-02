@@ -4,9 +4,9 @@ pipeline {
     environment {
         JAVA_HOME = tool 'jdk17'  // Ensure 'jdk17' is configured in Jenkins
         MAVEN_HOME = tool 'maven' // Ensure 'maven' is configured in Jenkins
-        TOMCAT_URL = 'http://localhost:9090/manager/text'
+        TOMCAT_URL = 'http://3.106.222.43:9090/manager/text'
         TOMCAT_USER = 'admin'
-        TOMCAT_PASSWORD = 'admin123'
+        TOMCAT_PASSWORD = 'admin_password'
         WAR_FILE_NAME = 'simplewebapp.war'  // Replace with actual WAR file name
     }
 
