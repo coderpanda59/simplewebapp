@@ -2,53 +2,87 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "myapp:latest"
-        CONTAINER_NAME = "myapp-container"
+        DOCKER_IMAGE = "pandurang70/springboot-app:latest"
+        CONTAINER_NAME = "springboot-app"
+        APP_PORT = "8081"  // Change this if needed
     }
 
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: 'main', url: 'https://github.com/coderpanda59/simplewebapp.git'
+                sh '''
+                if [ -d "app" ]; then
+                    rm -rf app
+                fi
+                git clone -b main https://github.com/coderpanda59/simplewebapp.git app
+                cd app
+                '''
             }
         }
-
-        stage('Build Docker Image') {
+        
+        stage('Build Project') {
             steps {
-                script {
-                    // Enable BuildKit if desired
-                    sh 'export DOCKER_BUILDKIT=1'
-                    // Using docker buildx with correct flag '--tag' instead of '-t'
-                    sh 'docker buildx build --tag $DOCKER_IMAGE .'
+                sh '''
+                cd app
+                mvn clean package -DskipTests
+                '''
+            }
+        }
+        
+        stage('Docker Login') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'docker-credentials', 
+                        usernameVariable: 'DOCKER_HUB_USERNAME', 
+                        passwordVariable: 'DOCKER_HUB_PASSWORD')]) {
+                    sh '''
+                    echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USERNAME" --password-stdin
+                    '''
                 }
             }
         }
-
-        stage('Stop Existing Container') {
+        
+        stage('Build & Push Docker Image') {
             steps {
-                script {
-                    // Stop the existing container if it's running
-                    sh "docker stop $CONTAINER_NAME || true"
-                    // Remove the container to ensure a clean start
-                    sh "docker rm $CONTAINER_NAME || true"
-                }
+                sh '''
+                cd app
+                docker build -t $DOCKER_IMAGE .
+                docker push $DOCKER_IMAGE
+                '''
             }
         }
 
-        stage('Run New Container') {
+        stage('Deploy on AWS EC2') {
             steps {
-                script {
-                    // Run the container in detached mode with port mapping
-                    sh 'docker run -d -p 8000:8000 --name $CONTAINER_NAME $DOCKER_IMAGE'
-                }
+                sh '''
+                # Stop and remove existing container if running
+                if docker ps -a --format '{{.Names}}' | grep -wq "$CONTAINER_NAME"; then
+                    docker stop "$CONTAINER_NAME"
+                    docker rm "$CONTAINER_NAME"
+                fi
+
+                # Remove old images to save space
+                docker system prune -f
+
+                # Pull the latest image
+                docker pull "$DOCKER_IMAGE"
+
+                # Run the container
+                docker run -d --name "$CONTAINER_NAME" -p $APP_PORT:$APP_PORT "$DOCKER_IMAGE"
+                '''
             }
         }
-    }
 
-    post {
-        always {
-            // Clean up: Ensure Docker containers are removed after each build
-            sh "docker system prune -f"
+        stage('Health Check') {
+            steps {
+                sh '''
+                sleep 5  # Wait for the app to start
+                if curl -s --head --request GET http://localhost:$APP_PORT | grep "200 OK" > /dev/null; then
+                    echo "Application is running successfully!"
+                else
+                    echo "Application failed to start!" && exit 1
+                fi
+                '''
+            }
         }
     }
 }
