@@ -20,3 +20,4 @@ EXPOSE 8081
 
 # Run the application
 CMD ["java", "-jar", "app.jar"]
+
