@@ -19,13 +19,13 @@ pipeline {
 
         stage('Build') {
             steps {
-                bat "${MAVEN_HOME}\\bin\\mvn clean package -DskipTests"
+                sh "${MAVEN_HOME}\\bin\\mvn clean package -DskipTests"
             }
         }
 
         stage('Test') {
             steps {
-                bat "${MAVEN_HOME}\\bin\\mvn test"
+                sh "${MAVEN_HOME}\\bin\\mvn test"
             }
         }
 
@@ -36,7 +36,7 @@ pipeline {
                     def tomcatDeployUrl = "${TOMCAT_URL}/deploy?path=/simplewebapp&update=true"  // Replace "your-app-name"
 
                     if (fileExists(warFilePath)) {
-                        bat """
+                        sh """
                         curl -u ${TOMCAT_USER}:${TOMCAT_PASSWORD} -T ${warFilePath} "${tomcatDeployUrl}"
                         """
                     } else {
