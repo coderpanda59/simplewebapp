@@ -32,7 +32,7 @@ pipeline {
             steps {
                 script {
                     def warFilePath = "target/${WAR_FILE_NAME}"
-                    def tomcatDeployUrl = "${TOMCAT_URL}/deploy?path=/simplewebapp&update=true"  // Replace "your-app-name"
+                    def tomcatDeployUrl = "${TOMCAT_URL}/deploy?path=/simplewebapp-vesion-2&update=true"  // Replace "your-app-name"
 
                     if (fileExists(warFilePath)) {
                         bat """
