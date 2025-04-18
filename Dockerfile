@@ -13,11 +13,11 @@ FROM openjdk:17-jdk-slim
 WORKDIR /app
 
 # Copy the built JAR from the previous stage
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /app/target/*.war app.war
 
 # Expose the application port
 EXPOSE 8000
 
 # Run the application
-CMD ["java", "-jar", "app.jar"]
+CMD ["java", "-jar", "app.war"]
 
