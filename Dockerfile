@@ -27,7 +27,7 @@ COPY . /app
 RUN mvn clean package -DskipTests
 
 # Stage 2: Use Apache Tomcat to run the WAR
-FROM tomcat:9-jdk17-temurin
+FROM tomcat:9-jdk21-temurin
 
 # Remove default ROOT application
 RUN rm -rf /usr/local/tomcat/webapps/ROOT
