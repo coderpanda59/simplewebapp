@@ -55,7 +55,7 @@
         <div class="box">
             <h2>Welcome to M Brothers International</h2>
             <p>We're glad to have you here. Explore our services.</p>
-            <p> test </p>
+            <p> test1 </p>
             <a href="#" class="button">Explore More</a>
         </div>
     </div>
